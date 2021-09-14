@@ -1,0 +1,48 @@
+- name: Installing Wordpress site on K8s
+  hosts: [k8smaster]
+  become: false
+  gather_facts: no
+
+  vars:
+   pwd_alias: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters') }}"
+   HOME_FOLDER: "/home/ubuntu/"
+
+  tasks:
+  - set_fact:
+      mysql_pass: "{{ pwd_alias }}"
+
+  - name: Copy pv provisoning file 
+    copy:
+     src: wordpress_pv.yaml
+     dest: /home/ubuntu/pv.yaml
+     mode: '0755'
+
+  - name: Create pv first
+    shell: kubectl create -f pv.yaml
+
+  - name: Copy yaml files to wordpress folder
+    copy:
+     src: wordpress
+     dest: "{{ HOME_FOLDER }}"
+     mode: '0755'
+
+  - name: Create mysql secret 
+    shell: kubectl create secret generic mysql-pass --from-literal password="{{ mysql_pass }}" 
+
+  - name: Run yaml files on master
+    shell: kubectl apply -f ./wordpress
+
+  - pause:
+     seconds: 40
+ 
+  - name: Check pods status
+    shell: kubectl get po -o wide
+    register: result
+ 
+  - debug: msg={{ result.stdout }}
+
+  - name: check svc for NodePort
+    shell: kubectl get svc
+    register: result
+
+  - debug: msg={{ result.stdout }}

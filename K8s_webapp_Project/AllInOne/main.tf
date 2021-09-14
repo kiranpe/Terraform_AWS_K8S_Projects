@@ -1,0 +1,3 @@
+module "allinone" {
+  source = "./modules"
+}

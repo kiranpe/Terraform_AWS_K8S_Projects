@@ -1,0 +1,24 @@
+- name: Install Oracle Java version 8
+  hosts: java
+  become: true
+  tasks:
+    - name: install common properties
+      shell: apt-get install software-properties-common -y
+      args:
+        warn: no
+    - name: Enable the Linux Uprising PPA
+      shell: add-apt-repository ppa:linuxuprising/java -y
+      args:
+        warn: no
+    - name: update and install java
+      shell: apt-get update && apt-get install openjdk-8-jdk -y
+      args:
+        warn: no
+    - name: check java version
+      shell: java -version 2>&1 | awk -F '"' '/version/ {print $2}'
+      changed_when: false
+      register: result
+    - name: Java Version
+      debug:
+        var: result.stdout
+

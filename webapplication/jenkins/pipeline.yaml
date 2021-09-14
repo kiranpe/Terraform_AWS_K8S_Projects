@@ -1,0 +1,25 @@
+#Pipeline Build
+
+trigger:
+- master/dummy
+
+pool:
+  vmImage: 'ubuntu-20.04'
+
+steps:
+- task: AmazonWebServices.aws-vsts-tools.AWSShellScript.AWSShellScript@1
+  displayName: 'Jenkins Pipeline'
+
+  inputs:
+    awsCredentials: 'aws_webapp_connect'
+    regionName: 'us-east-2'
+    scriptType: inline
+    inlineScript: |
+
+     #!/bin/bash
+   
+     terraform init
+     terraform workspace select jenkins
+     terraform plan
+     terraform apply --auto-approve
+     #terraform destroy --auto-approve

@@ -1,0 +1,9 @@
+- name: install jenkins on newly created instance
+  hosts: jenkinsci
+  become: yes
+  gather_facts: no
+ 
+  tasks:
+  - include: tasks/jenkis-docker/jenkins.yml   
+  - include: tasks/jenkis-docker/terraform.yml
+  - include: tasks/jenkis-docker/docker.yml

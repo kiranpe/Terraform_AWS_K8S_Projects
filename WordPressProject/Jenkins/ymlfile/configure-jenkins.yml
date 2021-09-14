@@ -1,0 +1,119 @@
+- name: playbook for Java and Jenkins installation
+  hosts: jenkins
+  become: yes
+  gather_facts: no 
+ 
+  vars:
+    java_home: "/opt/jdk/jdk1.8.0_281"
+    JAVA_TAR_FILE: "jdk_file/jdk-8u281-linux-i586.tar.gz"
+    JAVA_FILE: "jdk-8u281-linux-i586.tar.gz"
+    COPY_TO: "/opt/jdk"
+    export_java: "export JAVA_HOME={{ java_home }}"
+
+  tasks:
+  - name: setting up key to access server directly from local
+    authorized_key:
+     user: ubuntu
+     state: present
+     key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+
+  - name: check Java Version
+    shell: java -version
+    register: result
+    ignore_errors: true
+
+  - name: Create a Dir to copy Java tar file
+    file:
+     path: "{{ COPY_TO }}"
+     state: directory
+     owner: ubuntu
+     group: ubuntu
+     mode: '0755'
+    when: result is failed
+
+  - name: Push JDK tar file to target server
+    copy:
+     src: "{{ JAVA_TAR_FILE }}"
+     dest: "{{ COPY_TO }}"
+    become_user: ubuntu
+    when: result is failed
+
+  - name: Untar jdk
+    unarchive:
+      src: "{{ COPY_TO }}/{{ JAVA_FILE }}"
+      dest: "{{ COPY_TO }}"
+      remote_src: True
+    become_user: ubuntu
+    when: result is failed
+
+  - name: Add dpkg 
+    shell: dpkg --add-architecture i386
+ 
+  - name: Update cache
+    apt:
+     update_cache: yes
+
+  - name: Install 32bit packages required for Java
+    apt:
+     name: "{{ item }}"
+     state: present
+    loop: 
+      - libc6-i386
+      - libbz2-1.0:i386 
+      - libxrender1:i386 
+      - libxtst6:i386 
+      - libxi6:i386
+      - libxrender1 
+      - libxtst6 
+      - libxi6
+      - libxext6
+
+  - name: Add Java home in bashrc file
+    lineinfile:
+          dest: ~/.bashrc
+          regexp: '^#Java Home'
+          line: "{{ item }}" 
+          state: present
+    with_items:
+           - "{{ '#Java_Home' }}"
+           - "{{ export_java }}" 
+           - "{{ 'export PATH=$JAVA_HOME/bin:$PATH' }}"
+    become_user: ubuntu
+
+  - name: Create Link for Java in bin
+    file:
+      src: "{{ java_home }}/bin/java"
+      dest: /usr/bin/java
+      state: link
+
+  - name: check Java Version
+    shell: java -version 2>&1 | awk -F'"' '/version/ {print $2}'
+    register: result
+
+  - debug: msg="Java Version is {{ result.stdout }}"
+
+  - name: removing java tar file
+    file:
+      path: "/opt/jdk/{{ JAVA_TAR_FILE }}"
+      state: absent
+
+###Jenkins Installation####
+
+  - name: Add stable Jenkins key
+    apt_key: 
+      url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
+      state: present
+  
+  - name: Add stable binary to Source list
+    apt_repository:
+      repo: deb https://pkg.jenkins.io/debian-stable binary/
+      state: present
+
+  - name: Update apt cache
+    apt:
+     update_cache: yes
+
+  - name: Install Jenkins
+    apt:
+     name: jenkins
+     state: present

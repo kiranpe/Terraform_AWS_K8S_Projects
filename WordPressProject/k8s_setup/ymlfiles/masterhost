@@ -1,0 +1,2 @@
+[k8smaster]
+18.222.110.45 ansible_ssh_common_args='-o StrictHostKeyChecking=no'

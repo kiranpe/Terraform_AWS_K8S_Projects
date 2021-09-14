@@ -1,0 +1,23 @@
+- name: login into master node and get the token details
+  hosts: k8smaster
+  gather_facts: no
+
+  tasks:
+  - include: worker/token.yml
+
+- name: installing k8s and joining worker node with master
+  hosts: k8sworker
+  become: yes
+  gather_facts: no
+  
+  tasks:
+  - include: worker/repos.yml
+  - include: worker/configure_worker.yml
+
+- name: Checking nodes on master
+  hosts: k8smaster
+  become: false
+  gather_facts: no
+
+  tasks:
+  - include: worker/check_nodes.yml

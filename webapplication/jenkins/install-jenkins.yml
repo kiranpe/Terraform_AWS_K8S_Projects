@@ -1,0 +1,47 @@
+- name: Install Jenkins
+  hosts: jenkins
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Install aptitude using apt
+    apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+
+  - name: update cache
+    apt: update_cache=yes
+
+  - name: Install jdk
+    apt: name=openjdk-8-jdk state=latest
+
+  - name: Jenkins stable key
+    apt_key:
+      url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
+      state: present
+
+  - name: Add stable jenkins repo to source list
+    apt_repository:
+      repo: deb https://pkg.jenkins.io/debian-stable binary/ 
+      state: present
+
+  - name: Install jenins
+    apt: name=jenkins state=latest update_cache=yes
+
+  - name: Start jenkins
+    service: name=jenkins state=started
+
+  - name: Sleep for 30 seconds and continue with play
+    wait_for: 
+     timeout: 30
+
+  - name: Get init password Jenkins
+    shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+    changed_when: false
+    register: result
+  - debug: msg="{{ result.stdout }}"
+
+  - name: Install docker and add jenkins user to docker user
+    apt: name={{ item }} state=present
+    loop: [ 'maven', 'docker.io' ]
+  
+  - name: Add jenkins to docker group
+    user: name=jenkins group=docker

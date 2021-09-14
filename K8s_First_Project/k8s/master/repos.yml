@@ -1,0 +1,20 @@
+   - name: Add Docker's official GPG key
+     apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+   - name: add stable docker repo
+     apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+      state: present
+
+   - name: add k8s key value
+     apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+
+   - name: add k8s stable repo
+     apt_repository:
+      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+      filename: /etc/apt/sources.list.d/kubernetes
+      state: present

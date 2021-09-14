@@ -1,0 +1,27 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- release
+
+pool:
+  vmImage: 'ubuntu-20.04'
+
+steps:
+- task: AmazonWebServices.aws-vsts-tools.AWSShellScript.AWSShellScript@1
+  displayName: 'K8S Pipeline'
+
+  inputs:
+    awsCredentials: 'aws_k8s_connect'
+    regionName: 'us-east-2'
+    scriptType: inline
+    inlineScript: |
+
+     #!/bin/bash
+   
+      terraform init
+      terraform plan
+      terraform apply --auto-approve
+      terraform destroy --auto-approve

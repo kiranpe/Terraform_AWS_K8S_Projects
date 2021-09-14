@@ -1,0 +1,5 @@
+- name: Check nodes
+  action: shell kubectl get nodes
+  register: result
+
+- debug: msg={{ result.stdout }}
